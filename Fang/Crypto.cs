@@ -78,7 +78,7 @@ public static class Crypto {
         var index = (int) (block << 3);
 
         // generate block key
-        var bkey = (key64[32] | ((uint) index << 10) | (uint) index | ((ulong) block << 32)) + 0xA1652347;
+        var bkey = (key64[32] | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
 
         // get expanded key
         var ekey = key64[(int) (block % 32)];
@@ -101,7 +101,7 @@ public static class Crypto {
         (buffer32[0], buffer32[1]) = (buffer32[1], buffer32[0]);
 
         // generate block key
-        var bkey = (key64[32] | ((uint) index << 10) | (uint) index | ((ulong) block << 32)) + 0xA1652347;
+        var bkey = (key64[32] | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
 
         // get expanded key
         var ekey = key64[(int) (block % 32)];
