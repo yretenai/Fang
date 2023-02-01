@@ -13,8 +13,9 @@ if (!header[0].IsEncrypted) {
 var key = Crypto.ExpandKey(header[0].Seed);
 var buffer = new byte[header[0].Size].AsSpan();
 fs.ReadExactly(buffer);
-Crypto.Decrypt(ref key, ref buffer);
+Crypto.Decrypt(key, buffer);
 File.WriteAllBytes(args[0] + ".dec", buffer.ToArray());
-if (Debugger.IsAttached) {
-    Debugger.Break();
-}
+
+key = Crypto.ExpandKey(header[0].Seed);
+Crypto.Encrypt(key, buffer);
+File.WriteAllBytes(args[0] + ".enc", buffer.ToArray());
