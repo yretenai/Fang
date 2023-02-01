@@ -1,2 +1,2 @@
 # Fang
-FINAL FANTASY XIII Tools
+Crystal Tools Research, focusing on Lightning Returns
