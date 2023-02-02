@@ -1,16 +1,52 @@
 ﻿using System.Buffers.Binary;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using Fang.Structures;
 
 namespace Fang;
 
 public static class Crypto {
-    public static ulong CalculateFilelistSeed(ulong a, ulong b) => CalculateFilelistSeed(MemoryMarshal.AsBytes(new[] { a, b }.AsSpan()));
+    public static ulong CalculateFilelistSeed(ulong a, ulong b) {
+        Span<ulong> stack = stackalloc ulong[2] { a, b };
+        return CalculateFilelistSeed(MemoryMarshal.AsBytes(stack));
+    }
+
     public static ulong CalculateFilelistSeed(Span<byte> header) => (ulong) ((header[9] << 24) | (header[12] << 16) | (header[2] << 8) | header[0]);
 
+    public static void CryptFilelist(Span<byte> data) {
+        Span<byte> key = stackalloc byte[256];
+        var header = MemoryMarshal.Read<FilelistEncryptedHeader>(data);
+        var body = data.Slice(0x10, header.Size);
+        if (header.IsEncrypted) {
+            header.Magic = FilelistEncryptedHeader.DecryptedMagic;
+            ExpandKey(key, header.Seed);
+            Decrypt(key, body);
+        } else {
+            MD5.HashData(body).CopyTo(data);
+            header.Magic = FilelistEncryptedHeader.EncryptedMagic;
+            ExpandKey(key, header.Seed);
+            Encrypt(key, body);
+        }
+    }
+
+    // TODO: Find how to get the seed. Crypto is the same (I think.)
+    public static void CryptScript(Span<byte> data) {
+        throw new NotSupportedException();
+    }
+
+    public static void Crypt(Span<byte> data, ulong seed, bool decrypt) {
+        Span<byte> key = stackalloc byte[256];
+        ExpandKey(key, seed);
+        if (decrypt) {
+            Decrypt(key, data);
+        } else {
+            Encrypt(key, data);
+        }
+    }
+
     // 009FCC10
-    public static Span<byte> ExpandKey(ulong seed) {
-        var key = new byte[264].AsSpan();
+    public static void ExpandKey(Span<byte> key, ulong seed) {
         var key32 = MemoryMarshal.Cast<byte, uint>(key);
         var key64 = MemoryMarshal.Cast<byte, ulong>(key);
 
@@ -41,11 +77,6 @@ public static class Crypto {
             key32[kidx - 2] = (uint) (a ^ b);
             key32[kidx - 1] ^= key32[kidx - 3];
         }
-
-        // clear last 8 bits for xor storage
-        key32[64] = 0;
-        key32[65] = 0;
-        return key;
     }
 
     // 009FCFD0
@@ -61,9 +92,7 @@ public static class Crypto {
 
     // 009FCCE0
     public static void Encrypt(Span<byte> key, Span<byte> buffer) {
-        var key64 = MemoryMarshal.Cast<byte, ulong>(key);
         for (var blockNo = 0u; blockNo < buffer.Length >> 3; ++blockNo) {
-            key64[32] = blockNo << 23;
             var block = buffer.Slice((int) (blockNo << 3), 8);
             EncryptFinal(key, block, blockNo);
             EncryptRound(key, block, blockNo);
@@ -76,9 +105,10 @@ public static class Crypto {
         var buffer32 = MemoryMarshal.Cast<byte, uint>(buffer);
         var buffer64 = MemoryMarshal.Cast<byte, ulong>(buffer);
         var index = (int) (block << 3);
+        var state = (ulong)block << 23;
 
         // generate block key
-        var bkey = (key64[32] | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
+        var bkey = (state | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
 
         // get expanded key
         var ekey = key64[(int) (block % 32)];
@@ -96,12 +126,13 @@ public static class Crypto {
         var buffer32 = MemoryMarshal.Cast<byte, uint>(buffer);
         var buffer64 = MemoryMarshal.Cast<byte, ulong>(buffer);
         var index = (int) (block << 3);
+        var state = (ulong)block << 23;
 
         // swap blocks
         (buffer32[0], buffer32[1]) = (buffer32[1], buffer32[0]);
 
         // generate block key
-        var bkey = (key64[32] | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
+        var bkey = (state | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
 
         // get expanded key
         var ekey = key64[(int) (block % 32)];
