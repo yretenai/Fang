@@ -13,7 +13,11 @@ public record struct FilelistEncryptedHeader {
     public const uint EncryptedMagic = 0x1DE03478;
     public const uint DecryptedMagic = 0xE21FCB87;
 
-    public int Size => BinaryPrimitives.ReverseEndianness(SizeBE) + 0x10;
+    public int Size {
+        get => BinaryPrimitives.ReverseEndianness(SizeBE) + 0x10;
+        set => SizeBE = BinaryPrimitives.ReverseEndianness(value) - 0x10;
+    }
+
     public bool IsEncrypted => Magic == EncryptedMagic;
-    public ulong Seed => Crypto.CalculateFilelistSeed(A, B);
+    public ulong Seed => Crypto.CalculateFilelistSeed(ref this);
 }

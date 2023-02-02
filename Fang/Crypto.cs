@@ -12,6 +12,7 @@ public static class Crypto {
         return CalculateFilelistSeed(MemoryMarshal.AsBytes(stack));
     }
 
+    public static ulong CalculateFilelistSeed(ref FilelistEncryptedHeader header) => CalculateFilelistSeed(MemoryMarshal.AsBytes(new Span<FilelistEncryptedHeader>(ref header)));
     public static ulong CalculateFilelistSeed(Span<byte> header) => (ulong) ((header[9] << 24) | (header[12] << 16) | (header[2] << 8) | header[0]);
 
     public static void CryptFilelist(Span<byte> data) {
@@ -80,7 +81,7 @@ public static class Crypto {
     }
 
     // 009FCFD0
-    public static void Decrypt(Span<byte> key, Span<byte> buffer) {
+    public static void Decrypt(in Span<byte> key, Span<byte> buffer) {
         for (var blockNo = 0u; blockNo < buffer.Length >> 3; ++blockNo) {
             var block = buffer.Slice((int) (blockNo << 3), 8);
             DecryptRound(key, block, blockNo);
@@ -89,7 +90,7 @@ public static class Crypto {
     }
 
     // 009FCCE0
-    public static void Encrypt(Span<byte> key, Span<byte> buffer) {
+    public static void Encrypt(in Span<byte> key, Span<byte> buffer) {
         for (var blockNo = 0u; blockNo < buffer.Length >> 3; ++blockNo) {
             var block = buffer.Slice((int) (blockNo << 3), 8);
             EncryptFinal(key, block, blockNo);
@@ -98,7 +99,7 @@ public static class Crypto {
     }
 
     // 009FD050
-    private static void DecryptFinal(Span<byte> key, Span<byte> buffer, uint block) {
+    private static void DecryptFinal(in Span<byte> key, Span<byte> buffer, uint block) {
         var key64 = MemoryMarshal.Cast<byte, ulong>(key);
         var buffer32 = MemoryMarshal.Cast<byte, uint>(buffer);
         var buffer64 = MemoryMarshal.Cast<byte, ulong>(buffer);
@@ -119,7 +120,7 @@ public static class Crypto {
     }
 
     // 009FCD60
-    private static void EncryptFinal(Span<byte> key, Span<byte> buffer, uint block) {
+    private static void EncryptFinal(in Span<byte> key, Span<byte> buffer, uint block) {
         var key64 = MemoryMarshal.Cast<byte, ulong>(key);
         var buffer32 = MemoryMarshal.Cast<byte, uint>(buffer);
         var buffer64 = MemoryMarshal.Cast<byte, ulong>(buffer);
@@ -139,7 +140,7 @@ public static class Crypto {
     }
 
     // 009FD110
-    private static void DecryptRound(Span<byte> key, Span<byte> buffer, uint block) {
+    private static void DecryptRound(in Span<byte> key, Span<byte> buffer, uint block) {
         var offset = 0;
         // block specific xor byte
         var xor = (byte) (0x45 ^ block);
@@ -159,7 +160,7 @@ public static class Crypto {
     }
 
     // 009FCE30
-    private static void EncryptRound(Span<byte> key, Span<byte> buffer, uint block) {
+    private static void EncryptRound(in Span<byte> key, Span<byte> buffer, uint block) {
         var offset = 0;
         // block specific xor byte
         var xor = (byte) (0x45 ^ block);
