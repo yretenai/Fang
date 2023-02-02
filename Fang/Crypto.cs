@@ -30,9 +30,9 @@ public static class Crypto {
         }
     }
 
-    // TODO: Find how to get the seed. Crypto is the same (I think.)
-    public static void CryptScript(Span<byte> data) {
-        throw new NotSupportedException();
+    public static void CryptScript(Span<byte> data, bool decrypt) {
+        var seed = MemoryMarshal.Read<ulong>(data);
+        Crypt(data[8..], seed, decrypt);
     }
 
     public static void Crypt(Span<byte> data, ulong seed, bool decrypt) {
