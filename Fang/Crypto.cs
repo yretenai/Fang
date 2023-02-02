@@ -103,7 +103,7 @@ public static class Crypto {
         var buffer32 = MemoryMarshal.Cast<byte, uint>(buffer);
         var buffer64 = MemoryMarshal.Cast<byte, ulong>(buffer);
         var index = (int) (block << 3);
-        var state = (ulong)block << 23;
+        var state = (ulong) block << 23;
 
         // generate block key
         var bkey = (state | ((uint) index << 10) | (uint) index | ((ulong) block << 33)) + 0xA1652347;
@@ -124,7 +124,7 @@ public static class Crypto {
         var buffer32 = MemoryMarshal.Cast<byte, uint>(buffer);
         var buffer64 = MemoryMarshal.Cast<byte, ulong>(buffer);
         var index = (int) (block << 3);
-        var state = (ulong)block << 23;
+        var state = (ulong) block << 23;
 
         // swap blocks
         (buffer32[0], buffer32[1]) = (buffer32[1], buffer32[0]);
