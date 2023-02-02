@@ -81,9 +81,7 @@ public static class Crypto {
 
     // 009FCFD0
     public static void Decrypt(Span<byte> key, Span<byte> buffer) {
-        var key64 = MemoryMarshal.Cast<byte, ulong>(key);
         for (var blockNo = 0u; blockNo < buffer.Length >> 3; ++blockNo) {
-            key64[32] = blockNo << 23; // arbitrary but whatever.
             var block = buffer.Slice((int) (blockNo << 3), 8);
             DecryptRound(key, block, blockNo);
             DecryptFinal(key, block, blockNo);
