@@ -16,7 +16,7 @@ public static class Crypto {
     public static ulong CalculateFilelistSeed(Span<byte> header) => (ulong) ((header[9] << 24) | (header[12] << 16) | (header[2] << 8) | header[0]);
 
     public static void CryptFilelist(Span<byte> data) {
-        Span<byte> key = stackalloc byte[256];
+        Span<byte> key = stackalloc byte[264];
         var header = MemoryMarshal.Read<FilelistEncryptedHeader>(data);
         var body = data.Slice(0x10, header.Size);
         if (header.IsEncrypted) {
@@ -37,7 +37,7 @@ public static class Crypto {
     }
 
     public static void Crypt(Span<byte> data, ulong seed, bool decrypt) {
-        Span<byte> key = stackalloc byte[256];
+        Span<byte> key = stackalloc byte[264];
         ExpandKey(key, seed);
         if (decrypt) {
             Decrypt(key, data);
